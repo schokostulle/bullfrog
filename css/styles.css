@@ -160,6 +160,18 @@ input, select, textarea, button {
 }
 .badge-admin { border-color: var(--accent-dim); color: var(--accent); }
 .badge-member { border-color: var(--border); color: var(--text-dim); }
+.badge-pending { border-color: #8a4f1c; color: #ffab5e; }
+
+.nav-count {
+  margin-left: auto;
+  background: var(--danger);
+  color: #2a0b0c;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.2em 0.45em;
+  border-radius: 8px;
+}
 
 /* ---------- Toast / errors ---------- */
 
@@ -402,6 +414,7 @@ input, select, textarea, button {
   letter-spacing: 0.04em;
   color: var(--text-faint);
 }
+.member-actions { display: flex; gap: 0.4em; justify-content: flex-end; flex-wrap: wrap; }
 
 /* ---------- Loading ---------- */
 .skeleton { color: var(--text-faint); font-size: 13.5px; padding: 1em; }
