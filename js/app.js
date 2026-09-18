@@ -50,11 +50,21 @@ function flash(el, text, type = "error") {
 
   currentProfile = profile;
   els.whoName.textContent = profile.username;
+
+  if (profile.status !== "approved") {
+    els.whoRole.textContent = "Ausstehend";
+    els.whoRole.classList.add("badge-pending");
+    showPendingView();
+    wireLogout();
+    return;
+  }
+
   els.whoRole.textContent = profile.role === "admin" ? "Admin" : "Member";
   els.whoRole.classList.add(profile.role === "admin" ? "badge-admin" : "badge-member");
 
   if (profile.role === "admin") {
     els.navMembers.style.display = "flex";
+    loadPendingCount();
   }
 
   await loadRoster();
@@ -62,6 +72,31 @@ function flash(el, text, type = "error") {
   wirePlayerModal();
   wireLogout();
 })();
+
+function showPendingView() {
+  document.querySelector(".nav-group").style.display = "none";
+  document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+  document.getElementById("view-pending").classList.add("active");
+  document.getElementById("btn-refresh-status").addEventListener("click", () => window.location.reload());
+}
+
+async function loadPendingCount() {
+  const { count, error } = await supabaseClient
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
+  if (error) {
+    window.showDebugError("Anzahl ausstehender Mitglieder: " + error.message);
+    return;
+  }
+  const el = document.getElementById("pending-count");
+  if (count > 0) {
+    el.textContent = count;
+    el.style.display = "inline-block";
+  } else {
+    el.style.display = "none";
+  }
+}
 
 // ---------------------------------------------------------
 // Navigation zwischen Views
@@ -214,7 +249,7 @@ async function loadMembers() {
 
   const { data, error } = await supabaseClient
     .from("profiles")
-    .select("id, username, role")
+    .select("id, username, role, status")
     .order("username", { ascending: true });
 
   if (error) {
@@ -223,22 +258,75 @@ async function loadMembers() {
     return;
   }
 
-  const rows = data.map((m) => `
+  // Ausstehende Konten zuerst, damit sie nicht übersehen werden
+  data.sort((a, b) => {
+    if (a.status !== b.status) return a.status === "pending" ? -1 : 1;
+    return a.username.localeCompare(b.username);
+  });
+
+  const rows = data.map((m) => {
+    const isSelf = m.id === currentProfile.id;
+    const badge = m.status === "approved"
+      ? `<span class="badge ${m.role === "admin" ? "badge-admin" : "badge-member"}">${m.role === "admin" ? "Admin" : "Member"}</span>`
+      : `<span class="badge badge-pending">Ausstehend</span>`;
+
+    let actions = "";
+    if (!isSelf) {
+      if (m.status !== "approved") {
+        actions = `<button class="btn btn-primary btn-sm" data-approve="${m.id}">Freigeben</button>`;
+      } else {
+        actions = `
+          <button class="btn btn-ghost btn-sm" data-toggle-role="${m.id}" data-current-role="${m.role}">
+            ${m.role === "admin" ? "Zu Member machen" : "Zu Admin machen"}
+          </button>
+          <button class="btn btn-ghost btn-sm" data-revoke="${m.id}">Zugriff entziehen</button>`;
+      }
+    }
+
+    return `
     <div class="member-row" data-id="${m.id}">
-      <div>${escapeHtml(m.username)}${m.id === currentProfile.id ? " (du)" : ""}</div>
-      <div><span class="badge ${m.role === "admin" ? "badge-admin" : "badge-member"}">${m.role === "admin" ? "Admin" : "Member"}</span></div>
-      <div style="text-align:right;">
-        ${m.id === currentProfile.id ? "" : `<button class="btn btn-ghost btn-sm" data-toggle-role="${m.id}" data-current-role="${m.role}">
-          ${m.role === "admin" ? "Zu Member machen" : "Zu Admin machen"}
-        </button>`}
-      </div>
-    </div>`).join("");
+      <div>${escapeHtml(m.username)}${isSelf ? " (du)" : ""}</div>
+      <div>${badge}</div>
+      <div class="member-actions">${actions}</div>
+    </div>`;
+  }).join("");
 
   container.innerHTML = `
     <div class="roster">
-      <div class="member-row head"><div>Benutzer</div><div>Rolle</div><div></div></div>
+      <div class="member-row head"><div>Benutzer</div><div>Status</div><div></div></div>
       ${rows}
     </div>`;
+
+  document.querySelectorAll("[data-approve]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.approve;
+      const { error } = await supabaseClient.from("profiles").update({ status: "approved" }).eq("id", id);
+      if (error) {
+        window.showDebugError("Freigeben: " + error.message);
+        flash(els.membersMsg, "Freigabe fehlgeschlagen.");
+        return;
+      }
+      flash(els.membersMsg, "Mitglied freigegeben.", "ok");
+      loadMembers();
+      loadPendingCount();
+    });
+  });
+
+  document.querySelectorAll("[data-revoke]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.revoke;
+      if (!confirm("Zugriff für dieses Mitglied wirklich entziehen? Es muss dann erneut freigegeben werden.")) return;
+      const { error } = await supabaseClient.from("profiles").update({ status: "pending" }).eq("id", id);
+      if (error) {
+        window.showDebugError("Zugriff entziehen: " + error.message);
+        flash(els.membersMsg, "Aktion fehlgeschlagen.");
+        return;
+      }
+      flash(els.membersMsg, "Zugriff entzogen.", "ok");
+      loadMembers();
+      loadPendingCount();
+    });
+  });
 
   document.querySelectorAll("[data-toggle-role]").forEach((btn) => {
     btn.addEventListener("click", async () => {
