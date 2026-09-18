@@ -15,7 +15,10 @@
 
     <nav class="nav-group">
       <button class="nav-item active" data-view="roster"><span class="dot"></span>Spieler</button>
-      <button class="nav-item" data-view="members" id="nav-members" style="display:none;"><span class="dot"></span>Mitglieder</button>
+      <button class="nav-item" data-view="members" id="nav-members" style="display:none;">
+        <span class="dot"></span>Mitglieder
+        <span id="pending-count" class="nav-count" style="display:none;"></span>
+      </button>
     </nav>
 
     <div class="sidebar-foot">
@@ -41,6 +44,15 @@
 
       <div id="msg-roster" class="msg"></div>
       <div id="roster-container"><p class="skeleton">Lade Spieler…</p></div>
+    </section>
+
+    <!-- PENDING VIEW (nicht freigegebene Nutzer) -->
+    <section id="view-pending" class="view">
+      <div class="empty-state" style="max-width:440px;">
+        <h3>Warten auf Freigabe</h3>
+        <p>Dein Konto wurde erstellt, muss aber noch von einem Admin freigegeben werden, bevor du den Kader sehen und bearbeiten kannst.</p>
+        <button id="btn-refresh-status" class="btn btn-ghost">Status aktualisieren</button>
+      </div>
     </section>
 
     <!-- MEMBERS VIEW (admin only) -->
