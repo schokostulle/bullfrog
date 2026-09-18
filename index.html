@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roster — Anmeldung</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="auth-brand"><span class="mark"></span><h1>Roster</h1></div>
+    <p class="auth-sub">Team-Verwaltung für den Clan.</p>
+
+    <div id="msg" class="msg"></div>
+
+    <div class="auth-tabs">
+      <button id="tab-login" class="active" type="button">Anmelden</button>
+      <button id="tab-register" type="button">Registrieren</button>
+    </div>
+
+    <!-- LOGIN -->
+    <form id="form-login" class="auth-form active">
+      <div class="field">
+        <label for="login-username">Benutzername</label>
+        <input id="login-username" type="text" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="login-password">Passwort</label>
+        <input id="login-password" type="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Anmelden</button>
+    </form>
+
+    <!-- REGISTER -->
+    <form id="form-register" class="auth-form">
+      <div class="field">
+        <label for="reg-username">Benutzername</label>
+        <input id="reg-username" type="text" autocomplete="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_\-]+">
+      </div>
+      <p class="hint">Kein echtes E-Mail-Postfach nötig — dein Benutzername reicht.</p>
+      <div class="field">
+        <label for="reg-password">Passwort</label>
+        <input id="reg-password" type="password" autocomplete="new-password" required minlength="6">
+      </div>
+      <button type="submit" class="btn btn-primary">Konto erstellen</button>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>
